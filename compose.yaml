@@ -1,0 +1,67 @@
+
+services:
+  mariadb:
+    image: mariadb:11.4
+    container_name: mariadb_usuarios
+    restart: unless-stopped
+
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: test_persistencia
+      MARIADB_USER: ${DB_USERNAME}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+
+    ports:
+      # Acceso desde el equipo anfitrión, por ejemplo con DBeaver
+      - "3306:3306"
+
+    volumes:
+      # Persistencia de los datos
+      - mariadb_data:/var/lib/mysql
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "healthcheck.sh",
+          "--connect",
+          "--innodb_initialized"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+    networks:
+      - usuarios_network
+
+  usuarios_ms:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    image: docker_usuarios_ms:latest
+    container_name: docker_usuarios_ms
+    restart: unless-stopped
+
+    ports:
+      - "8181:8181"
+
+    environment:
+      DB_URL: jdbc:mariadb://mariadb:3306/test_persistencia
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+    networks:
+      - usuarios_network
+
+volumes:
+  mariadb_data:
+
+networks:
+  usuarios_network:
+    driver: bridge
