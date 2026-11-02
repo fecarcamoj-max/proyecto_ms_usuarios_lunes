@@ -19,17 +19,19 @@ public class JwtUtil {
     private long jwtExpiration;
 
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secretKey.getBytes());
-    }
+    return Keys.hmacShaKeyFor(
+        secretKey.getBytes(java.nio.charset.StandardCharsets.UTF_8)
+    );
+}
 
     public String generateToken(String username) {
-        return Jwts.builder()
-                .subject(username)
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
-                .signWith(getSigningKey())
-                .compact();
-    }
+    return Jwts.builder()
+            .subject(username)
+            .issuedAt(new Date())
+            .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+            .signWith(getSigningKey(), Jwts.SIG.HS256)
+            .compact();
+}
 
     public String extractUsername(String token) {
         return extractAllClaims(token).getSubject();
