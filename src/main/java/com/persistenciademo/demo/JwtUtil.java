@@ -25,11 +25,14 @@ public class JwtUtil {
 }
 
     public String generateToken(String username) {
+
     return Jwts.builder()
             .subject(username)
             .issuedAt(new Date())
-            .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
-            .signWith(getSigningKey(), Jwts.SIG.HS256)
+            .expiration(
+                new Date(System.currentTimeMillis() + jwtExpiration)
+            )
+            .signWith(getSigningKey(), Jwts.SIG.HS512)
             .compact();
 }
 
@@ -38,12 +41,13 @@ public class JwtUtil {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-    }
+
+    return Jwts.parser()
+            .verifyWith(getSigningKey())
+            .build()
+            .parseSignedClaims(token)
+            .getPayload();
+}
 
     public boolean validateToken(String token, String username) {
         final String extractedUsername = extractUsername(token);
