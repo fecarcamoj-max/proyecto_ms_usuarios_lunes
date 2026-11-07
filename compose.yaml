@@ -51,6 +51,7 @@ services:
       DB_URL: jdbc:mariadb://mariadb:3306/test_persistencia
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET to the exact value stored in AWS Secrets Manager}
 
     depends_on:
       mariadb:
