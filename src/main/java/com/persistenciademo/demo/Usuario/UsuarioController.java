@@ -29,6 +29,12 @@ public class UsuarioController {
         return usuarioService.getTraerUsuarios();
     }
 
+    // R: Leer
+    @GetMapping("/getTexto")
+    public String getTexto() {
+        return "Hola Mundo";
+    }
+
     // Guardar registros - Create.
     @PostMapping("/saveUsuario")
     public Usuario saveUsuario(@RequestBody Usuario usuario) {
