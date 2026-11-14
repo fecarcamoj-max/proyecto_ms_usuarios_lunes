@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
 
 # Poll origin/master and deploy this Compose project when a new commit arrives.
-# Intended for cron on the deployment host. Requires git, Maven, Docker Compose,
-# and flock (util-linux).
+# Intended for cron on the deployment host. Requires git, Docker Compose,
+# and flock (util-linux). Maven runs inside the Docker build stage.
 
 set -Eeuo pipefail
 
 BRANCH="${BRANCH:-master}"
 REMOTE="${REMOTE:-origin}"
 PROJECT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-LOG_FILE="${CICD_LOG_FILE:-${HOME}/cicd-maven.log}"
 PROJECT_NAME="$(basename -- "$PROJECT_DIR" | tr -cs '[:alnum:]_.-' '_')"
 LOCK_FILE="${CICD_LOCK_FILE:-${TMPDIR:-/tmp}/cicd-${USER:-deploy}-${PROJECT_NAME}.lock}"
 STATE_FILE="${CICD_STATE_FILE:-${HOME}/.cicd-last-deployed-${PROJECT_NAME}}"
@@ -60,20 +59,6 @@ if [[ -f "$STATE_FILE" && "$(cat "$STATE_FILE")" == "$CURRENT_COMMIT" ]]; then
   exit 0
 fi
 
-mkdir -p "$(dirname -- "$LOG_FILE")"
-MAVEN_OUTPUT="$(mktemp)"
-if ! mvn -B clean package -DskipTests >"$MAVEN_OUTPUT" 2>&1; then
-  {
-    printf '\n===== Maven build failed at %s (commit %s) =====\n' "$(date -Is)" "$CURRENT_COMMIT"
-    cat "$MAVEN_OUTPUT"
-    printf '\n===== End Maven failure =====\n'
-  } >>"$LOG_FILE"
-  cat "$MAVEN_OUTPUT" >&2
-  rm -f "$MAVEN_OUTPUT"
-  exit 1
-fi
-cat "$MAVEN_OUTPUT"
-rm -f "$MAVEN_OUTPUT"
 #Despliegue final...
 docker compose down --remove-orphans --rmi local
 # Remove dangling layers only; avoid pruning images or containers used by other projects.
