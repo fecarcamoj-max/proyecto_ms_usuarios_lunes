@@ -32,7 +32,7 @@ public class UsuarioController {
     // R: Leer
     @GetMapping("/getTexto")
     public String getTexto() {
-        return "Hola Mundo";
+        return "Hola Mundo Texto cambiado";
     }
 
     // Guardar registros - Create.

@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+
+# Poll origin/master and deploy this Compose project when a new commit arrives.
+# Intended for cron on the deployment host. Requires git, Maven, Docker Compose,
+# and flock (util-linux).
+
+set -Eeuo pipefail
+
+BRANCH="${BRANCH:-master}"
+REMOTE="${REMOTE:-origin}"
+PROJECT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+LOG_FILE="${CICD_LOG_FILE:-${HOME}/cicd-maven.log}"
+PROJECT_NAME="$(basename -- "$PROJECT_DIR" | tr -cs '[:alnum:]_.-' '_')"
+LOCK_FILE="${CICD_LOCK_FILE:-${TMPDIR:-/tmp}/cicd-${USER:-deploy}-${PROJECT_NAME}.lock}"
+STATE_FILE="${CICD_STATE_FILE:-${HOME}/.cicd-last-deployed-${PROJECT_NAME}}"
+
+cd "$PROJECT_DIR"
+
+# Cron may start a new run before the previous build/deploy has finished.
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+  echo "[$(date -Is)] Another CICD run is active; skipping."
+  exit 0
+fi
+
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "[$(date -Is)] Working tree is not clean; refusing to pull/deploy." >&2
+  exit 1
+fi
+
+git fetch --prune "$REMOTE" "$BRANCH"
+LOCAL_COMMIT="$(git rev-parse HEAD)"
+REMOTE_COMMIT="$(git rev-parse "${REMOTE}/${BRANCH}")"
+
+if [[ "$LOCAL_COMMIT" != "$REMOTE_COMMIT" ]]; then
+  # Only advance when the remote is a descendant; never discard local history.
+  if ! git merge-base --is-ancestor "$LOCAL_COMMIT" "$REMOTE_COMMIT"; then
+    echo "[$(date -Is)] Local branch cannot fast-forward to ${REMOTE}/${BRANCH}; refusing deployment." >&2
+    exit 1
+  fi
+  git pull --ff-only "$REMOTE" "$BRANCH" # SSH , Git pull token.
+fi
+
+CURRENT_COMMIT="$(git rev-parse HEAD)"
+if [[ -f "$STATE_FILE" && "$(cat "$STATE_FILE")" == "$CURRENT_COMMIT" ]]; then
+  echo "[$(date -Is)] Commit ${CURRENT_COMMIT} is already deployed."
+  exit 0
+fi
+
+mkdir -p "$(dirname -- "$LOG_FILE")"
+MAVEN_OUTPUT="$(mktemp)"
+if ! mvn -B clean package -DskipTests >"$MAVEN_OUTPUT" 2>&1; then
+  {
+    printf '\n===== Maven build failed at %s (commit %s) =====\n' "$(date -Is)" "$CURRENT_COMMIT"
+    cat "$MAVEN_OUTPUT"
+    printf '\n===== End Maven failure =====\n'
+  } >>"$LOG_FILE"
+  cat "$MAVEN_OUTPUT" >&2
+  rm -f "$MAVEN_OUTPUT"
+  exit 1
+fi
+cat "$MAVEN_OUTPUT"
+rm -f "$MAVEN_OUTPUT"
+#Despliegue final...
+docker compose down --remove-orphans --rmi local
+# Remove dangling layers only; avoid pruning images or containers used by other projects.
+docker image prune --force
+docker compose build --pull usuarios_ms
+docker compose up -d
+printf '%s\n' "$CURRENT_COMMIT" >"$STATE_FILE"
+
+echo "[$(date -Is)] Deployment completed for commit ${CURRENT_COMMIT:0:12}."
