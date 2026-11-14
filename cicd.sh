@@ -23,10 +23,23 @@ if ! flock -n 9; then
   exit 0
 fi
 
-if [[ -n "$(git status --porcelain)" ]]; then
-  echo "[$(date -Is)] Working tree is not clean; refusing to pull/deploy." >&2
+# chmod +x on Linux changes only the local mode. Ignore mode-only differences,
+# while still refusing to pull over tracked content changes.
+if ! git -c core.filemode=false diff --quiet --; then
+  echo "[$(date -Is)] Tracked files have local content changes; refusing to pull/deploy." >&2
   exit 1
 fi
+if ! git -c core.filemode=false diff --cached --quiet --; then
+  echo "[$(date -Is)] The index contains staged changes; refusing to pull/deploy." >&2
+  exit 1
+fi
+
+# .env contains host-specific secrets and is expected to remain untracked.
+while IFS= read -r untracked_file; do
+  [[ -z "$untracked_file" || "$untracked_file" == ".env" ]] && continue
+  echo "[$(date -Is)] Unexpected untracked file '${untracked_file}'; refusing to pull/deploy." >&2
+  exit 1
+done < <(git ls-files --others --exclude-standard)
 
 git fetch --prune "$REMOTE" "$BRANCH"
 LOCAL_COMMIT="$(git rev-parse HEAD)"
