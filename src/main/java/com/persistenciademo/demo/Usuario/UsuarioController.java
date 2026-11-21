@@ -32,7 +32,7 @@ public class UsuarioController {
     // R: Leer
     @GetMapping("/getTexto")
     public String getTexto() {
-        return "Nuevo Commit desde mi proyecto 16 11 2026 1946 ";
+        return "Nuevo Commit desde mi proyecto 21 11 2026 10 39 ";
     }
 
     // Guardar registros - Create.

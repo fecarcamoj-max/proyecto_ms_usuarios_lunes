@@ -1,0 +1,223 @@
+Guía EC2::::
+
+---------------------------------------
+
+Guía de instalación comandos Docker sobre Ubuntu 26-04
+
+1. Actualizar Ubuntu
+
+Abre una terminal y ejecuta:
+bash
+
+sudo apt update
+sudo apt upgrade -y
+
+Instala las dependencias:
+bash
+
+sudo apt install -y ca-certificates curl
+
+2. Agregar la clave GPG oficial de Docker
+bash
+
+sudo install -m 0755 -d /etc/apt/keyrings
+
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+  -o /etc/apt/keyrings/docker.asc
+
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+3. Agregar el repositorio oficial
+
+Ejecuta:
+bash
+
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+
+Actualiza los repositorios:
+bash
+
+sudo apt update
+
+4. Instalar Docker y Docker Compose
+
+Ejecuta:
+bash
+
+sudo apt install -y \
+  docker-ce \
+  docker-ce-cli \
+  containerd.io \
+  docker-buildx-plugin \
+  docker-compose-plugin
+
+Esto instala:
+
+    Docker Engine.
+
+    Docker CLI.
+
+    Containerd.
+
+    Docker Buildx.
+
+    Docker Compose V2.
+
+5. Iniciar y habilitar Docker
+bash
+
+sudo systemctl enable docker
+sudo systemctl start docker
+
+Comprueba el estado:
+bash
+
+sudo systemctl status docker
+
+Deberías ver:
+active (running)
+6. Probar la instalación
+
+Ejecuta:
+bash
+
+sudo docker run hello-world
+
+Si todo está correcto, aparecerá un mensaje indicando:
+text
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+7. Ejecutar Docker sin sudo (opcional)
+
+Para no tener que escribir sudo cada vez:
+bash
+
+sudo usermod -aG docker $USER
+
+Aplica el cambio cerrando sesión y volviendo a entrar, o ejecutando:
+bash
+
+newgrp docker
+
+Prueba:
+bash
+
+docker run hello-world
+
+Importante: pertenecer al grupo docker otorga privilegios equivalentes a root. Hazlo únicamente con usuarios de confianza.
+8. Comprobar las versiones
+bash
+
+docker --version
+docker compose version
+docker buildx version
+
+Comandos útiles
+
+Acción
+	
+
+Comando
+
+Ver contenedores activos
+	
+
+docker ps
+
+Ver todos los contenedores
+	
+
+docker ps -a
+
+Ver imágenes
+	
+
+docker images
+
+Ver volúmenes
+	
+
+docker volume ls
+
+Ver redes
+	
+
+docker network ls
+
+Detener Docker
+	
+
+sudo systemctl stop docker
+
+Reiniciar Docker
+	
+
+sudo systemctl restart docker
+
+Consultar logs
+	
+
+sudo journalctl -u docker
+Documentación oficial
+
+    Instalación de Docker en Ubuntu .
+
+    Configuración posterior a la instalación .
+
+    Documentación de Docker Compose .
+
+Una recomendación: si vas a utilizar Ubuntu 26.04 como servidor, instala Docker Engine (como hemos hecho aquí), no necesitas Docker Desktop.
+
+También puedo ayudarte a configurar un entorno completo con Docker Compose, Portainer, volúmenes persistentes y redes para administrar tus contenedores desde una interfaz web.
+
+#-------------- Clonación repositorio::::
+
+git clone https://github.com/fecarcamoj-max/proyecto_ms_usuarios_lunes.git
+#---------------
+Contenido archivo .env:
+
+DB_ROOT_PASSWORD=Reemplaza_Clave_Root_Segura
+DB_USERNAME=usuario_app
+DB_PASSWORD=Cambia_Esta_Clave_Segura
+JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+#------------
+
+docker compose up -d
+
+#---- Habilitar puerto de la app Spring Boot Java (ej: 8181, 8182....) en el grupo de seguridad.
+
+#---- Postman:::::::::
+
+- POST: Login: IP_EC2:8181/api/auth/login se genera el JWT y pueden consultar cualquier otro servicio....
+
+
+# CI: Integración Contínua - CD: Despliegue contínuo.
+
+#-- Objetivo: Al hacer un cambio en un commit - PULL REQUEST - Se activa CICD.... Al momento de hacer commit en una rama prod, se debe desplegar en donde se esté ejecutando..
+
+
+#Se da permiso de ejecución al .sh.
+chmod +x cicd.sh
+
+#Ejecutar el cicd.sh
+./cicd.sh
+
+
+# Agregar cron::: con crontab -e (elegir vim o nano)
+*/2 * * * * cd /home/ubuntu/proyecto_ms_usuarios_lunes && /bin/bash ./cicd.sh >> /var/log/ms-usuarios-cicd.log 2>&1
+
+#Mostrar despliegue contínuo...
+
+
+
+
+
