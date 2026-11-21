@@ -215,7 +215,25 @@ chmod +x cicd.sh
 # Agregar cron::: con crontab -e (elegir vim o nano)
 */2 * * * * cd /home/ubuntu/proyecto_ms_usuarios_lunes && /bin/bash ./cicd.sh >> /var/log/ms-usuarios-cicd.log 2>&1
 
-#Mostrar despliegue contínuo...
+#Mostrar despliegue contínuo… en postman con un texto - recomendación.
+
+
+#------ AWS LAMBDA.
+#-- https://github.com/fecarcamoj-max/jwt-auth-lambda
+#-- https://github.com/fecarcamoj-max/demoLambdaAWSJava
+###### Controlador: Codigo/Controlador com.example.demolambda.StreamLambdaHandler - Archivo a subir el que termina con lambda y pesa más, ejemplo: target/demoLambda-0.0.1-SNAPSHOT-lambda.jar
+
+------ AWS SQS.
+
+------ API Gateway.
+#-- https://github.com/fecarcamoj-max/jwt-auth-lambda
+
+
+
+
+
+
+
 
 
 
